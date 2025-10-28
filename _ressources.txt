@@ -1,0 +1,4 @@
+https://dev.to/dev-dhanushkumar/nat-traversal-a-visual-guide-to-udp-hole-punching-1936
+https://en.wikipedia.org/wiki/TCP_hole_punching
+https://en.wikipedia.org/wiki/ICMP_hole_punching
+https://en.wikipedia.org/wiki/UDP_hole_punching
