@@ -1,6 +1,5 @@
 # Surcouche TCP
 
-
 Header | Body
 
 TAG:START | Version | Message_Type | Size | Message | TAG:END
