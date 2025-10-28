@@ -1,31 +1,34 @@
-use shared::{LOCAL_HOST, DEFAULT_PORT, MessageSize, MESSAGE_SIZE_BYTES};
-use std::io::{Read};
-use std::net::{TcpListener};
+use shared::{LOCAL_HOST, SERVER_PORT};
+mod handlers;
+use handlers::udp;
+
+// TODO
+
+// Registration phase ==> hole punched and server keeps the address info
+// Once both PC-A and PC-B addresses are available, forward them
+// After this, the connection connot be reused for connecting the peers
+// As only the registry server can pass through the hole
+
+// Connection phase ==> second hole is punched specifically between peers
+// First udp packet to arrive is dropped because the NAT rule does not exist
+// Second udp packet to arrive is forwarded as the hole already exists, connection is established
 
 fn main() {
     shared::hello_world();
     println!("Server starting");
-    
-    let address = format!("{}:{}", LOCAL_HOST, DEFAULT_PORT);
-    let listener = TcpListener::bind(&address).expect("Could not bind");
-    println!("Server listening on {}", address);
-
-    for stream in listener.incoming() {
-        let mut stream = stream.unwrap();
-        let peer_addr = stream.peer_addr().unwrap();
-        println!("Client connected: {}", peer_addr);
-
-        // Read message size (4 bytes)
-        let mut size_buffer = [0u8; MESSAGE_SIZE_BYTES];
-        stream.read_exact(&mut size_buffer).unwrap();
-        let size = MessageSize::from_be_bytes(size_buffer) as usize;
-
-        // Read the message
-        let mut message_buffer = vec![0u8; size];
-        stream.read_exact(&mut message_buffer).unwrap();
-        let message = String::from_utf8(message_buffer).unwrap();
-        
-        println!("Received message: {}", message);
-    }
-    // use peer_addr and send back to client
+    let address = format!("{}:{}", LOCAL_HOST, SERVER_PORT);
+    udp::registry_server(&address).unwrap(); // answers clients by sending them back their address and port
 }
+
+/* 
+let listener = TcpListener::bind(&address).expect("Could not bind");
+println!("Server listening on {}", address);
+
+for stream in listener.incoming() {
+    let mut curr_stream = stream.unwrap();
+    let peer_addr = curr_stream.peer_addr().unwrap();
+    println!("Client connected: {}", peer_addr);
+
+    let message = tcp_receive_message(&mut curr_stream);
+    println!("Received message: {}", message);
+*/ 
