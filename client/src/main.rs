@@ -1,27 +1,30 @@
-use shared::{LOCAL_HOST, DEFAULT_PORT, MessageSize};
-use std::io::Write;
-use std::net::TcpStream;
-use std::net::Shutdown;
+use shared::{SERVER_IP, SERVER_PORT};
+use std::net::{UdpSocket};
+mod handlers;
+use handlers::udp;
 
 fn main() {
-    shared::hello_world();
     println!("Starting TCP client");
 
-    let address = format!("{}:{}", LOCAL_HOST, DEFAULT_PORT);
-    let mut stream = TcpStream::connect(address).unwrap();
+    let local_address = "0.0.0.0:0"; // lets the OS pick the port
+    let server_address = format!("{}:{}", SERVER_IP, SERVER_PORT);
+
+    // Creates UDP socket
+    let socket = UdpSocket::bind(local_address).unwrap();
+    println!("Created socket on local address: {}", socket.local_addr().unwrap());
+
+    // Tries to contact the server at the specified address and print the information received
+    udp::contact_sever(&socket, &server_address);
+}
+
+/*
+use shared::nat::tcp::{tcp_send_message};
+use std::net::TcpStream;
+let mut stream = TcpStream::connect(address).unwrap();
     println!("TCP client connected");
 
     // Send a message
     let message = "Hello from client!";
-    let message_bytes = message.as_bytes();
-    let size = message_bytes.len() as MessageSize;
-
-    // Write size first (4 bytes)
-    stream.write_all(&size.to_be_bytes()).unwrap();
-    
-    // Write message
-    stream.write_all(message_bytes).unwrap();
-
+    tcp_send_message(&mut stream, message);
     println!("Message sent: {}", message);
-    stream.shutdown(Shutdown::Write).expect("shutdown call failed");
-}
+*/
