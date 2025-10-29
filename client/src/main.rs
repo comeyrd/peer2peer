@@ -1,30 +1,31 @@
-use shared::{SERVER_IP, SERVER_PORT};
-use std::net::{UdpSocket};
-mod handlers;
-use handlers::udp;
+use tokio::net::TcpStream;
+use tokio_util::codec::{ Framed, LengthDelimitedCodec };
+use futures::{ SinkExt, StreamExt };
+use bincode;
+use shared::RpcMessage;
+use std::env;
 
-fn main() {
-    println!("Starting TCP client");
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let args: Vec<String> = env::args().collect();
 
-    let local_address = "0.0.0.0:0"; // lets the OS pick the port
-    let server_address = format!("{}:{}", SERVER_IP, SERVER_PORT);
+    let addr: String = if args.len() > 1 { args[1].clone() } else { "127.0.0.1:4000".to_string() };
+    let socket: TcpStream = TcpStream::connect(addr).await?;
+    let mut framed: Framed<TcpStream, LengthDelimitedCodec> = Framed::new(
+        socket,
+        LengthDelimitedCodec::new()
+    );
 
-    // Creates UDP socket
-    let socket = UdpSocket::bind(local_address).unwrap();
-    println!("Created socket on local address: {}", socket.local_addr().unwrap());
+    // Send Ping
+    let msg: RpcMessage = RpcMessage::Ping;
+    let bytes: Vec<u8> = bincode::serialize(&msg)?;
+    framed.send(bytes.into()).await?;
 
-    // Tries to contact the server at the specified address and print the information received
-    udp::contact_sever(&socket, &server_address);
+    // Wait for Pong
+    if let Some(Ok(bytes)) = framed.next().await {
+        let resp: RpcMessage = bincode::deserialize(&bytes)?;
+        println!("Server responded: {:?}", resp);
+    }
+
+    Ok(())
 }
-
-/*
-use shared::nat::tcp::{tcp_send_message};
-use std::net::TcpStream;
-let mut stream = TcpStream::connect(address).unwrap();
-    println!("TCP client connected");
-
-    // Send a message
-    let message = "Hello from client!";
-    tcp_send_message(&mut stream, message);
-    println!("Message sent: {}", message);
-*/
